@@ -38,9 +38,9 @@ knitr::opts_chunk$set(echo = TRUE)
 It refers to the way one organizes the working directory, which should be efficient (simplified paths, easily understandable file names) and standardized, in compliance with the **Research Compendium** convention.
 
 + **Project implementation**:
-As surprising as it may semm, Actions performed through graphical interfaces are often not reproducible! It is therefore imperative to favor interaction with the machine via the **command line**, even though this may require long and demanding training. Moreover, the use and creation of *scripts* must follow certain rules. Likewise, the sequence of actions performed on the data (i.e. **workflow**) must be automated to avoid any operator-induced error or variation. Finally, it is important to keep in mind that any action performed on a computer - whether a command-line operation or the use of a point-and-click interface - will produce results that are closely tied to the **system environment**, which must therefore be taken into account.
+As surprising as it may semm, actions performed through graphical interfaces are often not reproducible! It is therefore imperative to favor interaction with the machine via the **command line**, even though this may require long and demanding training. Moreover, the use and creation of *scripts* must follow certain rules. Likewise, the sequence of actions performed on the data (i.e. **workflow**) must be automated to avoid any operator-induced error or variation. Finally, it is important to keep in mind that any action performed on a computer - whether a command-line operation or the use of a point-and-click interface - will produce results that are closely tied to the **system environment**, which must therefore be taken into account.
 
-|   To address all of this, two main R packages are essential to know: *targets* and *renv*
+|   To address all of this, two main R packages are essential to know: *targets* and *renv*. More complex and holistic tools, such as *Docker* allow to secure the whole environment, that is your R and packages versions but also the operating system, system librairies, etc. This latter tools are probably too much for most of our research projects conducted with R. But they can be very useful if you want to ensure a full reproducibility in time, and for more complex projects such as bioinformatics projects.
 
 + **Project tracking**:
 Just as in the laboratory any modification to a protocol must be discussed with colleagues, collectively validated, and recorded in the lab notebook, any change made within a workflow must likewise be discussed, validated, documented, and **reversible**. To achieve this, **version control** (versioning) tools exist and should be used systematically.
@@ -53,6 +53,8 @@ Project sharing should rely on tools that limit the manual integration of variou
 |   In *RStudio*, the reference tool is *R Markdown*; it is *quarto* if you use the IDE new generation, i.e. *Positron*.
 
 |   Before going further, keep in mind that reproducibility is not perfection. It is about making your work understandable, inspectable, and improvable. Consequently, Every little bit of extra practice is already a big step forward!
+
+![](Images/FourPilars.png){width=75%}
 
 # **Project architecture**
 
@@ -249,7 +251,7 @@ tar_read() # To see the outputs
 
 |   Besides, `Sys.setenv()` is useful when your working directory contains several sub-projects.The specified argument relates to the content of the _*PROJECT.yaml* file where all the sub-projects of the reportory are listed and where you define the folders in which store the related *outputs*.
 
-# **The reproducibility of the working environment - the *renv* package**
+# **Project implementation - the *renv* package for a transportable project-specific library**
 
 |   The *renv* package presents many interests to enhance the reproducibility of your projects:
 
