@@ -281,6 +281,118 @@ tar_read() # To see the outputs
 
 |   Here are the four function `init())`, `snapshot()`, `status()`, `restore()`, enabling the basic use of *renv* to enhance your project reproducibility. If you are interesting in more advanced use of *renv*, you can find more informations [here](https://rstudio.github.io/renv/articles/renv.html). A great feedback by Elise Maigne is also available [here](https://elisemaigne.pages-forge.inrae.fr/2021_package_renv/presentation.html#31).
 
+# **Making your project fully reproducible with the power of images & containers - *Docker* **
+
+## **What images & containers are?**
+
+|   Consider your current computational research project (using R/Rstudio). It is made of several tied layers: 
+
++ **The R project**: scripts, data, renv.lock, ...
+
++ **The project's library**: *tidyverse*, *ggplot2*, *DESeq2*, *dplyr*, ...
+
++ **R (software) and RStudio (IDE)**: with specific versions and settings
+
++ **The system libraries**: *libcurl*, *ssl*, ... required for R, Rstudio and R packages to be executed.
+
++ **The Operating System**: Ubuntu, Windows, macOs, ...
+
+|   When you share your project, you basically share the first layer, or the two first if you use *renv*. But the three others are of critical importance to ensure the project to be reproducible - even more when you are working with some specific tools that may require specific system libraries, etc. *Docker* helps you to solve this. 
+
+|   Basically, *Docker* works with **images** that are isolated copies of projects and the whole related environment, i.e. the above 5 points. These images can be stored on dedicated clouds, shared, and run on any machine independently from the local environment. This is powerful and supposedly secures the reproducibility of the project throughout time. 
+
+|   From there, a **container** is nothing but an isolated image being executed. Hence, from a unique image, you can create several containers being executed in parallel. 
+
+|   You can easily install *Docker* on your machine following this [**link**](https://docs.docker.com/get-started/get-docker/).
+
+![](Images/Docker.png)
+
+## **Creating a *Docker* image - the Docker file**
+
+|   The *Dockerfile* is a recipe, *the formal description of what your image contains and what actions to do when it is executed*. Before going further in describing the Dockerfile and building an image, let's have a look at it.
+
+![](Images/Dockerfile.png){width=75%}
+
+|   The Docker file is actually built on few main commands:
+
++ **FROM**: to define a pre-existing image from which to build your own;
+
++ **RUN**: to execute a specific command during image building. It modifies the image during its building;
+
++ **COPY**: to copy objects (files or folders) from your local environment to the image during its building;
+
++ **CMD**: to execute a specific command while starting a container from the image.
+
+|   Then, the image is built following an iterative process, i.e. every step is validated before going on subsequent steps.
+
+|   1. Defining the source image from which to build your own. In this example : rocker/r-ver:4.5.2 is an image containing all necessary things to use R v4.5.2 and RStudio. You can find the image and all its versions [**here**](https://hub.docker.com/r/rocker/r-ver/tags).
+
+|   `FROM rocker/r-ver:4.5.2`
+
+|   2. Define the working directory of the project in the image.
+
+|   `WORKDIR /project``
+
+|   --> **Here, the objective in nothing but having a Linux environment with the good R version.** Build the library to check if there is no error  - in your local project: `docker build -t projectName .`
+
+|   3. Rebuild the renv project's library using *renv*.
+
+| We firt have to install *renv* into the image:
+
+| `RUN R -e "install.packages('renv', repos='https://cloud.r-project.org')"`
+
+| And copy from the local project all files needed to restore the project's library:
+
+| `COPY renv.lock renv.lock`
+
+| `COPY .Rprofile .Rprofile`
+
+| `COPY renv/activate.R renv/activate.R`
+
+| `COPY renv/settings.json renv/settings.json`
+
+| Then perform project's library restoration:
+
+| `RUN R -e "renv::restore()"`
+
+|   --> This step is iterative. First tries will identify system dependencies required to some R packages. If one package requires a specific system library, we add it to the image until the installation of all R packages is successfuly completed. Each try consist in building the image: `docker build -t projectName .`.
+
+|  To add Linux dependies to the image:
+
+|   `RUN apt-get update && apt-get install -y` followed by the name of the libraries (see above example). 
+
+|   4. Once R environment is ok, add any external tool. For instance, if your pipeline uses QUARTO CLI to render the work, you must install it in your image:
+
+|  `ARG QUARTO_VERSION=1.10.18`
+
+|   `RUN curl -Ls "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" -o quarto.tar.gz \`
+
+    && mkdir -p /opt/quarto \
+
+    && tar -xzf quarto.tar.gz -C /opt/quarto --strip-components=1 \
+
+    && ln -s /opt/quarto/bin/quarto /usr/local/bin/quarto \
+
+    && rm quarto.tar.gz
+    
+|   Execute in local: `docker build -t projectName .` to build the image with the QUARTO CLI
+
+|    5. Once the whole environment of your project is ok (OS, R, Rstudio, system libraries, R packages, QUARTO CLI), you can add the whole project to the image:
+
+|   `COPY . .` = it copies the whole content from your local root project to the working directory of the image.
+
+|   6. Tell *targets* where to find its script, then run it:
+
+|   `ENV TAR_PROJECT=reproducibility`
+
+|   `CMD ["R", "-e", "targets::tar_make()"]"`
+
+
+
+## **Looking at the *Docker * image, run it and retrieve the results**
+
+|   Well done, if you arrived here it means that your first *Docker* image has been built successfully ! Now, you may want to interact with your *Docker* image. For instance, you may want to enter and navigate into it. To do so, you must create a *container* (executing image): `docker run --rm -it projectName bash`
+
 # **Project versioning - Git and Github**
 
 ## **What are we talking about?**
