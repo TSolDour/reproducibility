@@ -263,9 +263,13 @@ tar_read() # To see the outputs
 
 |   **Semantic clarification:** The term "*library*" refers to a folder containing all the *packages* used. Usualy, with the function `library()` one load packages from the *system library* shared by all the R projects. With *renv*, *specific libraries* are created for each project.
 
-|   Once you have installed the package (`install.packages("renv")`), you can run `renv::init()` to convert your project. Three entities will be created at the root of the project:
+|   Once you have installed the package (`install.packages("renv")`), you can run `renv::init()` to convert your project. Five entities will be created at the root of the project:
 
 + The **project's library**: *renv/library*. Here are stored all the packages.
+
++ *renv/activate.R*: contains some informations to inform *renv* about how to initiate the project and retrieve packages listed in *renv.lock*.
+
++ The **project's settings**: *renv/settings.dcf*. It contains some *renv* configuration settings.
 
 + The **lock file**: *renv.lock*. It contains all metadata needed to re-install the packages on other computers.
 
@@ -273,9 +277,9 @@ tar_read() # To see the outputs
 
 |   As you progress through the project, you will probably need to install, load and update packages. To properly update the *renv.lock* file, you just have to run `renv::snapshot()`.
 
-|  Finally, `renv::restore()` uses the *renv.lock* file to re-install the whole project library when you share your project on another machine.
+|  Finally, to properly share your project's library, send with your project the following files : *renv.lock*, *.Rprofile*, *renv/.gitignore*, *renv/setting.dcf*, *renv/activate.R*. Then, when the project will be open on another machine, just executing `renv::restore()` will automatically re-install the whole project's library from the *renv.lock*. It is possible that some dependencies require a manual installation but *renv* usually drives you well in this process.
 
-|   Here are the three function `init())`, `snapshot()`, `restore()`, enabling the basic use of *renv* to enhance your project reproducibility. If you are interesting in more advanced use of *renv*, you can find more informations [here](https://rstudio.github.io/renv/articles/renv.html).
+|   Here are the four function `init())`, `snapshot()`, `status()`, `restore()`, enabling the basic use of *renv* to enhance your project reproducibility. If you are interesting in more advanced use of *renv*, you can find more informations [here](https://rstudio.github.io/renv/articles/renv.html). A great feedback by Elise Maigne is also available [here](https://elisemaigne.pages-forge.inrae.fr/2021_package_renv/presentation.html#31).
 
 # **Project versioning - Git and Github**
 
