@@ -29,6 +29,26 @@ Running under: macOS Tahoe 26.5
 
 Les dépendances exactes (versions de packages) sont figées dans `renv.lock`, et le pipeline d'analyse est géré avec le package `targets` (voir `Reproducibility_targets.R` et `_targets.yaml`). Le rapport final est un document Quarto (`report/article/Article.qmd`) rendu en `.docx`.
 
+## Reproduire l'analyse dans votre environnement local
+
+Si votre environnement est le même ou proche de celui utilisé pour le projet (cf. section "Environnement d'analyse original"), vous pouvez simplement cloner ce dépôt GitHub :
+
+```bash
+git clone https://github.com/TSolDour/reproducibility.git
+cd reproducibility
+```
+
+Ouvrez le projet *reproducibility.Rproj* et executez la commande `renv::restore()`. Cela ré-installera le librairie projet automatiquement. Quelques erreurs peuvent survenir lors de l'installation - suivez les indications de renv et tout se passera bien !
+
+Ensuite, ouvrez le script *reproducibility_target.R*, exécutez **Ctrl+A** puis **Ctrl+enter**. Ensuite, exécutez les commandes suivantes:
+
+```r
+Sys.setenv(TAR_PROJECT="reproducibility")
+tar_make()
+```
+
+Ainsi les outputs du pipeline devraient se trouver dans les dossiers *results/plot* et *report/article*.
+
 ## Reproduire l'analyse avec Docker
 
 Pour éviter tout problème lié à la version de R, de Quarto, ou des packages installés en local, l'ensemble de l'environnement est fourni sous forme d'image Docker.
