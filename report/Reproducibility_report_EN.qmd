@@ -299,73 +299,88 @@ tar_read() # To see the outputs
 
 |   When you share your project, you basically share the first layer, or the two first if you use *renv*. But the three others are of critical importance to ensure the project to be reproducible - even more when you are working with some specific tools that may require specific system libraries, etc. *Docker* helps you to solve this. 
 
+![](Images/Docker.png)
+
 |   Basically, *Docker* works with **images** that are isolated copies of projects and the whole related environment, i.e. the above 5 points. These images can be stored on dedicated clouds, shared, and run on any machine independently from the local environment. This is powerful and supposedly secures the reproducibility of the project throughout time. 
 
 |   From there, a **container** is nothing but an isolated image being executed. Hence, from a unique image, you can create several containers being executed in parallel. 
 
 |   You can easily install *Docker* on your machine following this [**link**](https://docs.docker.com/get-started/get-docker/).
 
-![](Images/Docker.png)
 
 ## **Creating a *Docker* image - the Docker file**
 
-|   The *Dockerfile* is a recipe, *the formal description of what your image contains and what actions to do when it is executed*. Before going further in describing the Dockerfile and building an image, let's have a look at it.
+|   The *Dockerfile* is a recipe, *the formal description of what your image contains and what actions to do when it is executed*. Before going further in describing the Dockerfile and building a minimal image example, let's have a look at it.
 
 ![](Images/Dockerfile.png){width=75%}
 
+<br>
+
 |   The Docker file is actually built on few main commands:
 
-+ **FROM**: to define a pre-existing image from which to build your own;
++ **`FROM`**: to define a pre-existing image from which to build your own;
 
-+ **RUN**: to execute a specific command during image building. It modifies the image during its building;
++ **`RUN`**: to execute a specific command during image building. It modifies the image during its building;
 
-+ **COPY**: to copy objects (files or folders) from your local environment to the image during its building;
++ **`COPY`**: to copy objects (files or folders) from your local environment to the image during its building;
 
-+ **CMD**: to execute a specific command while starting a container from the image.
++ **`CMD`**: to execute a specific command while starting a container from the image.
 
 |   Then, the image is built following an iterative process, i.e. every step is validated before going on subsequent steps.
 
-|   1. Defining the source image from which to build your own. In this example : rocker/r-ver:4.5.2 is an image containing all necessary things to use R v4.5.2 and RStudio. You can find the image and all its versions [**here**](https://hub.docker.com/r/rocker/r-ver/tags).
+-------------------------------------------------------------------------------
 
-|   `FROM rocker/r-ver:4.5.2`
+|   **1. Define the source image** from which to build your own.
 
-|   2. Define the working directory of the project in the image.
+|   In this example : *rocker/r-ver:4.5.2* is an image containing all things necessary to use R v4.5.2 and RStudio. You can find the image and all its versions [**here**](https://hub.docker.com/r/rocker/r-ver/tags).
 
-|   `WORKDIR /project``
+`FROM rocker/r-ver:4.5.2`
 
-|   --> **Here, the objective in nothing but having a Linux environment with the good R version.** Build the library to check if there is no error  - in your local project: `docker build -t projectName .`
+-------------------------------------------------------------------------------
 
-|   3. Rebuild the renv project's library using *renv*.
+|   **2. Define the working directory of the project in the image.**
 
-| We firt have to install *renv* into the image:
+`WORKDIR /project`
 
-| `RUN R -e "install.packages('renv', repos='https://cloud.r-project.org')"`
+--> **Here, the objective in nothing but having a Linux environment with the good R version.** Build the library to check if there is no error  - in your local project: `docker build -t projectName .`
 
-| And copy from the local project all files needed to restore the project's library:
+-------------------------------------------------------------------------------
 
-| `COPY renv.lock renv.lock`
+|   **3. Rebuild the renv project's library using *renv*.**
 
-| `COPY .Rprofile .Rprofile`
+|   We firt have to install *renv* into the image...
 
-| `COPY renv/activate.R renv/activate.R`
+`RUN R -e "install.packages('renv', repos='https://cloud.r-project.org')"`
 
-| `COPY renv/settings.json renv/settings.json`
+|   ...and copy from the local project all files needed to restore the project's library...
 
-| Then perform project's library restoration:
+`COPY renv.lock renv.lock`
 
-| `RUN R -e "renv::restore()"`
+`COPY .Rprofile .Rprofile`
 
-|   --> This step is iterative. First tries will identify system dependencies required to some R packages. If one package requires a specific system library, we add it to the image until the installation of all R packages is successfuly completed. Each try consist in building the image: `docker build -t projectName .`.
+`COPY renv/activate.R renv/activate.R`
 
-|  To add Linux dependies to the image:
+`COPY renv/settings.json renv/settings.json`
 
-|   `RUN apt-get update && apt-get install -y` followed by the name of the libraries (see above example). 
+|   ...then perform project's library restoration:
 
-|   4. Once R environment is ok, add any external tool. For instance, if your pipeline uses QUARTO CLI to render the work, you must install it in your image:
+`RUN R -e "renv::restore()"`
 
-|  `ARG QUARTO_VERSION=1.10.18`
+--> This step is iterative. First tries will identify system dependencies required to some R packages. If one package requires a specific system library, we add it to the image until the installation of all R packages is successfuly completed. Each try consist in building the image: `docker build -t projectName .`.
 
-|   `RUN curl -Ls "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" -o quarto.tar.gz \`
+|  To add Linux dependencies to the image:
+
+`RUN apt-get update && apt-get install -y` followed by the name of the libraries (see above example). 
+
+-------------------------------------------------------------------------------
+
+|   **4. Once R environment is ok, add any external tool.**
+
+|   For instance, if your pipeline uses QUARTO CLI to render the work, you must install it in your image:
+
+`ARG QUARTO_VERSION=1.10.18`
+
+`RUN curl -Ls "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz" -o quarto.tar.gz \`
 
     && mkdir -p /opt/quarto \
 
@@ -377,21 +392,83 @@ tar_read() # To see the outputs
     
 |   Execute in local: `docker build -t projectName .` to build the image with the QUARTO CLI
 
-|    5. Once the whole environment of your project is ok (OS, R, Rstudio, system libraries, R packages, QUARTO CLI), you can add the whole project to the image:
+-------------------------------------------------------------------------------
+
+|    **5. Once the whole environment of your project is ok (OS, R, Rstudio, system libraries, R packages, QUARTO CLI), add the whole project to the image.**
 
 |   `COPY . .` = it copies the whole content from your local root project to the working directory of the image.
 
-|   6. Tell *targets* where to find its script, then run it:
+-------------------------------------------------------------------------------
+
+|   **6. Tell *targets* where to find its script, then run it.**
 
 |   `ENV TAR_PROJECT=reproducibility`
 
-|   `CMD ["R", "-e", "targets::tar_make()"]"`
+|   `CMD ["R", "-e", "targets::tar_make()"]"` if you what the pipeline to be executed and results produced each time you start a container
+
+|   `RUN R -e "targets::tar_make()"` if you want the pipeline to be executed once during the image building. (Both option can be applied together.)
 
 
 
-## **Looking at the *Docker * image, run it and retrieve the results**
+## **Looking at the *Docker* image, run it and retrieve the results**
 
-|   Well done, if you arrived here it means that your first *Docker* image has been built successfully ! Now, you may want to interact with your *Docker* image. For instance, you may want to enter and navigate into it. To do so, you must create a *container* (executing image): `docker run --rm -it projectName bash`
+|   Well done, if you arrived here it means that your first *Docker* image has been built successfully !
+
+|   Now, you may want to interact with your *Docker* image. For instance, you may want to **enter and navigate** into it. To do so, you must create a *container* (executing image): `docker run --rm -it projectName bash`. If you put `RUN R -e "targets::tar_make()"` at the end of the Dockerfile, then you will find the results stored in the image. But if not, you won't find the results. 
+
+|   Probably the best way to execute a container and retrieve the outputs is to proceed as follow:
+
++ `docker run --name projectName_run projectName` - here you run the container at give him an identifier (i.e. *projectName_run*);
+
++ `docker cp projectName_run:/project ./projectName_output` - you copy the content of the container into your local environment under the label *projectName_output*;
+
++ `docker rm projectName_run` - remove the container.
+
+|   Following this process, you will retrieve in the local *./projectName_output* folder the whole project from the image with the outputs.
+
+|   Another way to proceed is to build volumes. In other words, you start a container and you link each container folder to a local folder. Hence, any file written in the targeted container folder will be written in the related local folder at the same time. The command is quite simple and has this structure: `docker run -v host:container projectName`. For instance:
+
++ `docker run --rm \`
+
++ `-v $(pwd)/resultsDocker:/project/results \`
+
++ `-v $(pwd)/reportDocker/article:/project/report/article \`
+
++ `projectName`
+
+|   Here, *resultsDocker* and *reportDocker/article* are the exact local copies of */project/results* and *project/report/article* from the container. Although the `--rm` argument remove the container after it is executed, the local copies will stay on your machine.
+
+|   Finally, if you encapsulate a project within a Docker image, anyone can re-execute a container from the image and retrieve locally the exact same outputs as yours. This is powerful!
+
+## **Sharing your project as *Docker* image**
+
+|   There are at least two options to share your project as a *Docker* image.
+
+|   The first one consists in pushing the Dockerfile to the GitHub repository of your project with the source code. Basically, if you already share your R projects on GitHub (or GitLab), you just have to add your Dockerfile. Doing so, someone who wants to reproduce your results would just have to run the following commands:
+
+|   `git clone <your_repository URL>` to download the project from GitHub
+
+|   `cd projectName` to enter the project
+
+|   `docker build -t projectName .` To rebuild the image
+
+|   `docker run --rm \`
+
+|   `-v $(pwd)/resultsDocker:/project/results \`
+
+|   `-v $(pwd)/reportDocker/article:/project/report/article projectName` to execute the container and retrieve the output in local.
+
+|   A second option is to publish the built image on a dedicated platform. Both options are not mutually exclusive and, if you use GitHub to share your all project, you can publish the built image on GitHub Container Registry; it is free and linked to your GitHub repository. To do so, run the following commands:
+
+|   `docker build -t ghcr.io/<username>/projectName:1.0 .`
+
+|   `docker push ghcr.io/<username>/projetName:1.0`
+
+|   After that, your built image is available for anyone. It is also linked to your project GitHub repository as a package. If someone want to retrieve it, just run:
+
+|   `docker pull ghcr.io/<username>/projectName:1.0`
+
+|   `docker run --rm -v $(pwd)/resultsDocker:/project/results ghcr.io/<username>/projectName:1.0`
 
 # **Project versioning - Git and Github**
 
