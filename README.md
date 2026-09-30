@@ -104,7 +104,7 @@ Reproducibility/
 ├── Dockerfile              # Environnement reproductible (R, Quarto, dépendances système)
 ├── renv.lock                # Versions exactes des packages R
 ├── Reproducibility_targets.R          # Définition du pipeline targets
-├── _targets.yaml            # Configuration du pipeline (projet "gasar")
+├── _targets.yaml            # Configuration du pipeline (projet "reproducibility")
 ├── data/
 │   └── Allo.tsv              # Jeu de données brut
 ├── R/                        # Fonctions R utilisées par le pipeline
